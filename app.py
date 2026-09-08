@@ -10,8 +10,7 @@ st.set_page_config(
 )
 
 # Load trained model
-model = YOLO("best.pt")
-
+model = YOLO("best (1).onnx")
 # Flower classes
 classes = [
     "Daisy",
