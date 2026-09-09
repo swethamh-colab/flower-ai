@@ -12,34 +12,24 @@ st.set_page_config(
 )
 
 # -------------------------------------------------
-# LOAD MODELS
+# LOAD FLOWER MODEL
 # -------------------------------------------------
 @st.cache_resource
 def load_flower_model():
     return YOLO("best (1).onnx")
 
 
-@st.cache_resource
-def load_rose_disease_model():
-    return YOLO("best (1).pt")
-
-
 flower_model = load_flower_model()
 
-# Your 5 flower classes
+# -------------------------------------------------
+# FLOWER CLASSES
+# -------------------------------------------------
 flower_classes = [
     "Daisy",
     "Dandelion",
     "Rose",
     "Sunflower",
     "Tulip"
-]
-
-# Rose disease classes
-rose_disease_classes = [
-    "Black Spot",
-    "Downy Mildew",
-    "Fresh Leaf"
 ]
 
 # -------------------------------------------------
@@ -94,7 +84,7 @@ if image is not None:
     st.divider()
 
     # ---------------------------------------------
-    # RUN FLOWER MODEL
+    # FLOWER DETECTION
     # ---------------------------------------------
     flower_result = flower_model.predict(
         source=image,
@@ -102,6 +92,7 @@ if image is not None:
     )[0]
 
     flower_index = flower_result.probs.top1
+
     flower_confidence = float(
         flower_result.probs.top1conf
     )
@@ -109,70 +100,22 @@ if image is not None:
     flower_name = flower_classes[flower_index]
 
     # ---------------------------------------------
-    # RUN DISEASE MODEL ONLY FOR ROSE
+    # DISEASE ANALYSIS
     # ---------------------------------------------
+    # IMPORTANT:
+    # No disease model has been connected yet.
+    # Therefore we DO NOT make a fake disease prediction.
+
     disease_name = "Not Available"
     disease_confidence = 0.0
-    system_status = "Analysis Pending"
     severity = "Pending Segmentation"
+
+    system_status = "Analysis Pending"
+
     recommendation = (
-        "A disease model for this flower is not available yet."
+        "Flower species detected successfully. "
+        "A flower-specific disease model is not available yet."
     )
-
-    if flower_name == "Rose":
-
-        try:
-            disease_model = load_rose_disease_model()
-
-            disease_result = disease_model.predict(
-                source=image,
-                verbose=False
-            )[0]
-
-            disease_index = disease_result.probs.top1
-            disease_confidence = float(
-                disease_result.probs.top1conf
-            )
-
-            disease_name = rose_disease_classes[disease_index]
-
-            if disease_name == "Fresh Leaf":
-
-                system_status = "Healthy"
-                severity = "0%"
-                recommendation = (
-                    "The rose leaf appears healthy. "
-                    "Continue proper watering, sunlight and regular care."
-                )
-
-            elif disease_name == "Black Spot":
-
-                system_status = "Disease Detected"
-                severity = "Pending Segmentation"
-
-                recommendation = (
-                    "Remove badly affected leaves, improve air circulation, "
-                    "avoid overhead watering and consider an appropriate "
-                    "fungicide according to local guidance."
-                )
-
-            elif disease_name == "Downy Mildew":
-
-                system_status = "Disease Detected"
-                severity = "Pending Segmentation"
-
-                recommendation = (
-                    "Improve ventilation, reduce leaf moisture, remove "
-                    "affected material and consider an appropriate fungicide "
-                    "according to local guidance."
-                )
-
-        except Exception:
-            system_status = "Disease Model Error"
-            disease_name = "Unable to Analyze"
-            recommendation = (
-                "The rose disease model could not be loaded."
-            )
 
     # ---------------------------------------------
     # IMAGE + RESULT
@@ -213,28 +156,14 @@ if image is not None:
         # System status
         st.markdown("### 🟢 System Status")
 
-        if system_status == "Healthy":
-
-            st.success(
-                f"**{system_status}**"
-            )
-
-        elif system_status == "Disease Detected":
-
-            st.error(
-                f"**{system_status}**"
-            )
-
-        else:
-
-            st.info(
-                f"**{system_status}**"
-            )
+        st.info(
+            f"**{system_status}**"
+        )
 
     st.divider()
 
     # ---------------------------------------------
-    # DASHBOARD CARDS
+    # DASHBOARD
     # ---------------------------------------------
     st.subheader("📊 Flower AI Dashboard")
 
@@ -280,9 +209,7 @@ if image is not None:
 
         st.metric(
             "🔬 Disease Confidence",
-            f"{disease_confidence * 100:.2f}%"
-            if disease_name != "Not Available"
-            else "N/A"
+            "N/A"
         )
 
     st.divider()
@@ -295,19 +222,17 @@ if image is not None:
     st.info(recommendation)
 
     # ---------------------------------------------
-    # FUTURE ANALYSIS
+    # DISEASE MODEL STATUS
     # ---------------------------------------------
-    if flower_name != "Rose":
+    st.divider()
 
-        st.divider()
-
-        st.warning(
-            f"🦠 Disease detection for **{flower_name}** "
-            "will be added after its flower-specific disease "
-            "model is trained."
-        )
+    st.warning(
+        "🦠 Disease detection is currently unavailable. "
+        "A separate disease classification model must be trained "
+        "and connected for disease identification."
+    )
 
     st.caption(
-        "Note: Severity will be calculated using image segmentation "
-        "after the segmentation model is added."
+        "Note: Disease severity will be calculated using "
+        "segmentation after a segmentation model is added."
     )
